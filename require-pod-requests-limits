@@ -1,0 +1,210 @@
+---
+apiVersion: "kyverno.io/v1"
+kind: "ClusterPolicy"
+source: "managed"
+metadata:
+  managedFields:
+  - apiVersion: "kyverno.io/v1"
+    fieldsType: "FieldsV1"
+    fieldsV1:
+      f:spec:
+        f:rules: {}
+    manager: "kyverno"
+    operation: "Update"
+    time: "2022-11-16T04:55:33Z"
+  - apiVersion: "kyverno.io/v1"
+    fieldsType: "FieldsV1"
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          ".": {}
+          f:policies.kyverno.io/category: {}
+          f:policies.kyverno.io/description: {}
+          f:policies.kyverno.io/title: {}
+      f:spec:
+        ".": {}
+        f:validationFailureAction: {}
+    manager: "okhttp"
+    operation: "Update"
+    time: "2022-11-16T04:55:33Z"
+  - apiVersion: "kyverno.io/v1"
+    fieldsType: "FieldsV1"
+    fieldsV1:
+      f:status:
+        ".": {}
+        f:conditions: {}
+        f:ready: {}
+    manager: "kyverno"
+    operation: "Update"
+    subresource: "status"
+    time: "2022-11-16T04:55:47Z"
+  annotations:
+    policies.kyverno.io/category: "Best Practices"
+    policies.kyverno.io/description: "As application workloads share cluster resources,\
+      \ it is important to limit resources  requested and consumed by each pod. It\
+      \ is recommended to require 'resources.requests'  and 'resources.limits' per\
+      \ pod. If a namespace level request or limit is specified,  defaults will automatically\
+      \ be applied to each pod based on the 'LimitRange'  configuration."
+    pod-policies.kyverno.io/autogen-controllers: "DaemonSet,Deployment,Job,StatefulSet,CronJob"
+    policies.kyverno.io/title: "Require pod requests and limits"
+  uid: "8ee90c04-f3c1-41fc-ab49-40132e2a7b3d"
+  selfLink: null
+  resourceVersion: "13544531"
+  creationTimestamp: "2022-11-16T04:55:33Z"
+  deletionTimestamp: null
+  namespace: null
+  name: "require-pod-requests-limits"
+spec:
+  validationFailureAction: "audit"
+  background: true
+  failurePolicy: "Fail"
+  schemaValidation: null
+  webhookTimeoutSeconds: null
+  generateExistingOnPolicyUpdate: null
+  mutateExistingOnPolicyUpdate: null
+  applyRules: null
+  rules:
+  - name: "validate-resources"
+    preconditions: null
+    context: null
+    imageExtractors: null
+    validate:
+      message: "CPU and memory resource requests and limits are required"
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+              requests:
+                cpu: "?*"
+                memory: "?*"
+      anyPattern: null
+      foreach: null
+      manifests: null
+      podSecurity: null
+    match:
+      roles: []
+      clusterRoles: []
+      resources:
+        kinds:
+        - "Pod"
+        name: null
+        namespaces: []
+        selector: null
+        annotations: {}
+        namespaceSelector: null
+    exclude:
+      roles: []
+      clusterRoles: []
+      resources:
+        kinds: []
+        name: null
+        namespaces: []
+        selector: null
+        annotations: {}
+        namespaceSelector: null
+  - name: "autogen-validate-resources"
+    preconditions: null
+    context: null
+    imageExtractors: null
+    validate:
+      message: "CPU and memory resource requests and limits are required"
+      pattern:
+        spec:
+          template:
+            spec:
+              containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+      anyPattern: null
+      foreach: null
+      manifests: null
+      podSecurity: null
+    match:
+      roles: []
+      clusterRoles: []
+      resources:
+        kinds:
+        - "DaemonSet"
+        - "Deployment"
+        - "Job"
+        - "StatefulSet"
+        name: null
+        namespaces: []
+        selector: null
+        annotations: {}
+        namespaceSelector: null
+    exclude:
+      roles: []
+      clusterRoles: []
+      resources:
+        kinds: []
+        name: null
+        namespaces: []
+        selector: null
+        annotations: {}
+        namespaceSelector: null
+  - name: "autogen-cronjob-validate-resources"
+    preconditions: null
+    context: null
+    imageExtractors: null
+    validate:
+      message: "CPU and memory resource requests and limits are required"
+      pattern:
+        spec:
+          jobTemplate:
+            spec:
+              template:
+                spec:
+                  containers:
+                  - resources:
+                      limits:
+                        memory: "?*"
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+      anyPattern: null
+      foreach: null
+      manifests: null
+      podSecurity: null
+    match:
+      roles: []
+      clusterRoles: []
+      resources:
+        kinds:
+        - "CronJob"
+        name: null
+        namespaces: []
+        selector: null
+        annotations: {}
+        namespaceSelector: null
+    exclude:
+      roles: []
+      clusterRoles: []
+      resources:
+        kinds: []
+        name: null
+        namespaces: []
+        selector: null
+        annotations: {}
+        namespaceSelector: null
+status:
+  violationCount: null
+  rulesAppliedCount: null
+  resourcesBlockedCount: null
+  averageExecutionTime: null
+  resourcesGeneratedCount: null
+  resourcesMutatedCount: null
+  rulesFailedCount: null
+  ready: true
+  conditions:
+  - lastTransitionTime: "2022-11-16T04:55:47Z"
+    message: ""
+    reason: "Succeeded"
+    status: "True"
+    type: "Ready"
