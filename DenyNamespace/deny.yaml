@@ -1,33 +1,35 @@
-apiVersion: "kyverno.io/v1"
-kind: "ClusterPolicy"
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
 metadata:
-  name: "cert-manager-limit-duration"
+  name: block-velero-restore
   annotations:
-    policies.kyverno.io/title: "Certificate max duration 100 days"
-    policies.kyverno.io/category: "Cert-Manager"
+    policies.kyverno.io/title: Block Velero Restore to Protected Namespace
+    policies.kyverno.io/category: Velero
+    policies.kyverno.io/subject: Restore
     policies.kyverno.io/description: >-
-      "Kubernetes managed non-letsencrypt certificates have to be renewed in every 100 days."
+      Velero allows on backup and restore operations and is designed to be run with full cluster admin permissions.
+      It allows on cross namespace restore operations, which means you can restore backup of namespace A to namespace B.
+      This policy protect restore operation into system or any protected namespaces, listed in deny condition section. 
+      It checks the Restore CRD object and its namespaceMapping field. If destination match protected namespace
+      then operation fails and warning message is throw.
 spec:
   validationFailureAction: audit
   background: false
   rules:
-  - name: certificate-duration-max-100days 
+  - name: block-velero-restore-to-protected-namespace
     match:
-      resources:
-        kinds:
-        - Certificate
-    preconditions:
-      all:
-      - key: "{{ contains(request.object.spec.issuerRef.name, 'letsencrypt') }}"
-        operator: Equals
-        value: False
-      - key: "{{ request.object.spec.duration }}"
-        operator: NotEquals
-        value: ""
+      any:
+      - resources:
+          kinds:
+          - velero.io/v1/Restore
     validate:
-      message: "certificate duration must be < than 2400h (100 days)"
+      
       deny:
         conditions:
-        - key: "{{ max( [ to_number(regex_replace_all('h.*',request.object.spec.duration,'')), to_number('2400') ] ) }}"
-          operator: NotEquals
-          value: 2400
+          any:
+            - key: "{{request.object.spec.namespaceMapping | values(@)}}"
+              operator: AnyIn
+              value:
+              - kube-system
+              - kube-node-lease
+      message: "Warning! Restore to protected namespace: {{request.object.spec.namespaceMapping | values(@)}} is not allowed!"
