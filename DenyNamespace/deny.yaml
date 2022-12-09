@@ -1,35 +1,43 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: "kyverno.io/v1"
+kind: "ClusterPolicy"
 metadata:
-  name: block-velero-restore
+  name: "block-large-images"
   annotations:
-    policies.kyverno.io/title: Block Velero Restore to Protected Namespace
-    policies.kyverno.io/category: Velero
-    policies.kyverno.io/subject: Restore
+    policies.kyverno.io/title: "Block Large Images"
+    policies.kyverno.io/category: "Custom Shounak"
     policies.kyverno.io/description: >-
-      Velero allows on backup and restore operations and is designed to be run with full cluster admin permissions.
-      It allows on cross namespace restore operations, which means you can restore backup of namespace A to namespace B.
-      This policy protect restore operation into system or any protected namespaces, listed in deny condition section. 
-      It checks the Restore CRD object and its namespaceMapping field. If destination match protected namespace
-      then operation fails and warning message is throw.
+      "Pods which run containers of very large image size take longer to pull
+      and require more space to store. A user may either inadvertently or purposefully
+      name an image which is unusually large to disrupt operations. This policy
+      checks the size of every container image and blocks if it is over 2 Gibibytes."    
 spec:
   validationFailureAction: audit
-  background: false
   rules:
-  - name: block-velero-restore-to-protected-namespace
+  - name: block-over-twogi
     match:
       any:
       - resources:
           kinds:
-          - velero.io/v1/Restore
+          - Pod
+    preconditions:
+      all:
+      - key: "{{request.operation || 'BACKGROUND'}}"
+        operator: NotEquals
+        value: DELETE
     validate:
-      
-      deny:
-        conditions:
-          any:
-            - key: "{{request.object.spec.namespaceMapping | values(@)}}"
-              operator: AnyIn
-              value:
-              - kube-system
-              - kube-node-lease
-      message: "Warning! Restore to protected namespace: {{request.object.spec.namespaceMapping | values(@)}} is not allowed!"
+      message: "images with size greater than 2Gi not allowed"  
+      foreach:
+      - list: "request.object.spec.containers"
+        context: 
+        - name: imageSize
+          imageRegistry: 
+            reference: "{{ element.image }}"
+            # Note that we need to use `to_string` here to allow kyverno to treat it like a resource quantity of type memory
+            # the total size of an image as calculated by docker is the total sum of its layer sizes
+            jmesPath: "to_string(sum(manifest.layers[*].size))"
+        deny:
+          conditions:
+            all:
+            - key: "2Gi"
+              operator: LessThan
+              value: "{{imageSize}}"
