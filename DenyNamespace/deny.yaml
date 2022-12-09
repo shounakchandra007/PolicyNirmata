@@ -1,30 +1,34 @@
+---
 metadata:
-  name: "deny-privileged-profile"
+  name: "disallow-tag"
   annotations:
-    policies.kyverno.io/category: "Velero"
+    policies.kyverno.io/category: "ShounakCustom"
     policies.kyverno.io/description: "The ':stable' tag is mutable and can lead to\
       \ unexpected errors if the image changes.  A best practice is to use an immutable\
       \ tag (e.g. v2.3) that maps to a specific version  of an application pod."
 apiVersion: "kyverno.io/v1"
-kind: "ClusterPolicy"    
+kind: "ClusterPolicy"
 spec:
-  validationFailureAction: audit
-  background: false
   rules:
-  - name: check-privileged
-    match:
-      any:
-      - resources:
-          kinds:
-            - Namespace
-          selector:
-            matchLabels:
-              pod-security.kubernetes.io/enforce: privileged
-    exclude:
-      any:
-      - clusterRoles:
-        - cluster-admin
+  - match:
+      resources:
+        kinds:
+        - "Pod"
+    name: "require-image-tag"
     validate:
-      message: Only cluster-admins may create Namespaces that allow setting the privileged level.
-      deny: {}
-
+      pattern:
+        spec:
+          containers:
+          - image: "*:*"
+      message: "An image tag is required."
+  - match:
+      resources:
+        kinds:
+        - "Pod"
+    name: "validate-image-tag"
+    validate:
+      pattern:
+        spec:
+          containers:
+          - image: "!*:stable"
+      message: "Using the ':stable' tag is not recommended."
