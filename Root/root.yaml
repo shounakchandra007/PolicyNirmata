@@ -1,16 +1,19 @@
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
 metadata:
-  name: restrict-root
+  name: resource-quantities
 spec:
-  privileged: false
-  runAsUser:
-    rule: MustRunAsNonRoot
-  seLinux:
-    rule: RunAsAny
-  fsGroup:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: RunAsAny
-  volumes:
-  - '*'
+  validationFailureAction: enforce
+  background: false
+  rules:
+  - name: memory-limit
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    preconditions:
+      any:
+      - key: "{{request.object.spec.containers[*].resources.requests.memory}}"
+        operator: LessThan
+        value: 18Gi
