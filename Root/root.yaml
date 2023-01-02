@@ -32,10 +32,7 @@ spec:
         name: pod-network-loss-sa
     validate:
       message: >-
-        Privilege escalation is disallowed. The fields
-        spec.containers[*].securityContext.allowPrivilegeEscalation, and
-        spec.initContainers[*].securityContext.allowPrivilegeEscalation must
-        be undefined or set to `false`.        
+        "Privilege escalation is disallowed. The fields"   
       pattern:
         spec:
           =(initContainers):
