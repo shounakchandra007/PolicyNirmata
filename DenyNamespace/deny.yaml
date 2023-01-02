@@ -38,6 +38,6 @@ spec:
         deny:
           conditions:
             all:
-            - key: "10M"
+            - key: "1G"
               operator: LessThan
               value: "{{imageSize}}"
