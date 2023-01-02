@@ -9,7 +9,7 @@ metadata:
       "Pods which run containers of very large image size take longer to pull
       and require more space to store. A user may either inadvertently or purposefully
       name an image which is unusually large to disrupt operations. This policy
-      checks the size of every container image and blocks if it is over 1 Gibibytes."    
+      checks the size of every container image and blocks if it is over 10M."    
 spec:
   validationFailureAction: audit
   rules:
@@ -25,7 +25,7 @@ spec:
         operator: NotEquals
         value: DELETE
     validate:
-      message: "images with size greater than 1Gi not allowed"  
+      message: "images with size greater than 10M not allowed"  
       foreach:
       - list: "request.object.spec.containers"
         context: 
@@ -38,6 +38,6 @@ spec:
         deny:
           conditions:
             all:
-            - key: "100M"
+            - key: "10M"
               operator: LessThan
               value: "{{imageSize}}"
