@@ -1,40 +1,76 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: "deny-exec-by-namespace-label"
+  name: "limit-containers-per-pod"
   annotations:
-    policies.kyverno.io/title: "Block Pod Exec by Namespace Label"
-    policies.kyverno.io/category: "Exec block"
-    policies.kyverno.io/minversion: 1.4.2
+    policies.kyverno.io/title: "Limit Containers per Pod"
+    policies.kyverno.io/category: "LimitContainer"
+    policies.kyverno.io/minversion: 1.3.6
     policies.kyverno.io/subject: Pod
     policies.kyverno.io/description: >-
-      "The `exec` command may be used to gain shell access, or run other commands, in a Pod's container. While this can
-      be useful for troubleshooting purposes, it could represent an attack vector and is discouraged.
-      This policy blocks Pod exec commands based upon a Namespace label `exec=false`."      
+      "Pods can have many different containers which
+      are tightly coupled. It may be desirable to limit the amount of containers that
+      can be in a single Pod to control best practice application or so policy can
+      be applied consistently. This policy checks all Pods to ensure they have"
+      no more than four containers.      
 spec:
-  validationFailureAction: enforce
+  validationFailureAction: audit
   background: false
   rules:
-  - name: deny-exec-by-ns-label
+  - name: limit-containers-per-pod-controllers
     match:
       resources:
         kinds:
-        - PodExecOptions
-    context:
-    - name: nslabelexec
-      apiCall:
-        urlPath: "/api/v1/namespaces/{{request.namespace}}"
-        jmesPath: "metadata.labels.exec"
+        - Deployment
+        - DaemonSet
+        - Job
+        - StatefulSet
     preconditions:
       all:
-      - key: "{{ request.operation || 'BACKGROUND' }}"
-        operator: Equals
-        value: CONNECT
+      - key: "{{request.operation || 'BACKGROUND'}}"
+        operator: Equal
+        value: CREATE
     validate:
-      message: Executing a command in a container is forbidden for Pods running in Namespaces protected with the label "exec=false".
+      message: "Pods can only have a maximum of 4 containers."
       deny:
         conditions:
           any:
-          - key: "{{ nslabelexec }}"
-            operator: Equals
-            value: "false"
+          - key: "{{request.object.spec.template.spec.containers[] | length(4)}}"
+            operator: GreaterThan
+            value: "4"
+  - name: limit-containers-per-pod-bare
+    match:
+      resources:
+        kinds:
+        - Pod
+    preconditions:
+      all:
+      - key: "{{request.operation || 'BACKGROUND'}}"
+        operator: Equal
+        value: CREATE
+    validate:
+      message: "Pods can only have a maximum of 4 containers."
+      deny:
+        conditions:
+          any:
+          - key: "{{request.object.spec.containers[] | length(4)}}"
+            operator: GreaterThan
+            value: "4"
+  - name: limit-containers-per-pod-cronjob
+    match:
+      resources:
+        kinds:
+        - CronJob
+    preconditions:
+      all:
+      - key: "{{request.operation || 'BACKGROUND'}}"
+        operator: Equal
+        value: CREATE
+    validate:
+      message: "Pods can only have a maximum of 4 containers."
+      deny:
+        conditions:
+          any:
+          - key: "{{request.object.spec.jobTemplate.spec.template.spec.containers[] | length(4)}}"
+            operator: GreaterThan
+            value: "4"
