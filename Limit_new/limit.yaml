@@ -32,7 +32,9 @@ spec:
           containers:
           - resources:
               requests:
-                memory: "?*:1Gi"
-                cpu: "?*:1"
+                memory: 50Mi
+                cpu: 1m
               limits:
-                memory: "?*:100M"
+                memory: 2Gi
+                cpu:
+                
