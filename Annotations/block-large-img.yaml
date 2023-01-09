@@ -4,7 +4,7 @@ metadata:
   name: "block-large-images"
   annotations:
     policies.kyverno.io/title: "Block Large Images"
-    policies.kyverno.io/category: "Test-Polocy-reports"
+    policies.kyverno.io/category: "Test-Policy-reports"
     policies.kyverno.io/description: >-
       "Pods which run containers of very large image size take longer to pull
       and require more space to store. A user may either inadvertently or purposefully
