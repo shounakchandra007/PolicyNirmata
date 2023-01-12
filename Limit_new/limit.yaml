@@ -36,5 +36,5 @@ spec:
                 cpu: 8Gi
               limits:
                 memory: 30Gi
-                cpu: 
+                cpu: 1Gi
                 
